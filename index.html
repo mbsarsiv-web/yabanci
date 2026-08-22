@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yabancı Oranları Analiz Robotu</title>
+  <style>
+    * { box-sizing: border-box; font-family: 'Google Sans Text', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+    body { background-color: #f4f6f9; color: #333; padding: 20px; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 800px; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    h2 { text-align: center; color: #1e3a8a; margin-bottom: 20px; font-size: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+    
+    label { display: block; font-weight: 600; margin-bottom: 8px; color: #475569; font-size: 15px; }
+    
+    select { width: 100%; padding: 12px 10px; border: 1px solid #cbd5e1; border-radius: 8px; background-color: #fff; font-size: 16px; color: #1e293b; outline: none; height: 50px; cursor: pointer; }
+    select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.2); }
+    
+    .main-btn { width: 100%; padding: 15px; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; height: 55px; }
+    .btn-blue { background: #2563eb; }
+    .btn-blue:hover, .btn-blue:focus { background: #1d4ed8; outline: 3px solid #93c5fd; }
+    .btn-green { background: #10b981; }
+    .btn-green:hover, .btn-green:focus { background: #059669; outline: 3px solid #6ee7b7; }
+    
+    .filter-panel { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+    .date-row { display: flex; gap: 20px; margin-bottom: 20px; }
+    .date-col { flex: 1; }
+    
+    .split-selects { display: flex; gap: 10px; }
+    .split-selects select { flex: 1; }
+    
+    .quick-actions { display: flex; gap: 6px; }
+    .btn-quick { flex: 1; background: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 2px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; height: 45px; line-height: 1.1; }
+    .btn-quick:hover, .btn-quick:focus { background: #cbd5e1; border-color: #94a3b8; outline: 2px solid #2563eb; }
+    
+    .loading { text-align: center; font-weight: 600; color: #2563eb; margin: 15px 0; display: none; font-size: 18px; }
+    .error-msg { color: #b91c1c; background: #fee2e2; padding: 15px; border-radius: 8px; font-weight: 500; text-align: center; margin-top: 15px; display: none; }
+    
+    .result-card { margin-top: 25px; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; display: none; }
+    .result-header { background: #f8fafc; padding: 15px; font-weight: bold; font-size: 18px; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; text-align: center; }
+    .result-body { padding: 20px; }
+    .result-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #e2e8f0; font-size: 16px; }
+    .metric-name { color: #64748b; font-weight: 500; }
+    .metric-value { font-weight: 600; color: #1e293b; }
+    .final-badge { text-align: center; padding: 18px; margin-top: 15px; border-radius: 8px; font-weight: bold; font-size: 20px; }
+    .badge-success { background-color: #dcfce7; color: #15803d; }
+    .badge-danger { background-color: #fee2e2; color: #b91c1c; }
+    .badge-neutral { background-color: #f1f5f9; color: #475569; }
+
+    .table-container { display: none; margin-top: 25px; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 16px; }
+    .data-table th, .data-table td { padding: 15px 12px; text-align: center; border-bottom: 1px solid #e2e8f0; }
+    .data-table th { background-color: #f8fafc; color: #1e3a8a; border-bottom: 2px solid #cbd5e1; font-size: 15px; text-align: center; }
+    .data-table tr:hover { background-color: #f1f5f9; }
+    .text-green { color: #15803d; font-weight: bold; }
+    .text-red { color: #b91c1c; font-weight: bold; }
+    
+    .sortable { cursor: pointer; user-select: none; transition: 0.2s; position: relative; }
+    .sortable:hover { background-color: #e2e8f0; color: #2563eb; }
+    .sort-icon { font-size: 14px; margin-left: 5px; display: inline-block; width: 15px; }
+    .sort-active { color: #2563eb; }
+    
+    @media (max-width: 600px) {
+      .date-row { flex-direction: column; gap: 15px; }
+      .quick-actions { flex-wrap: wrap; gap: 8px; }
+      .btn-quick { min-width: 31%; height: auto; padding: 12px 2px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>📊 Yabancı Oranı Analiz Radarı</h2>
+  
+  <div id="loadingInit" class="loading" style="display: block;">Piyasa verileri yükleniyor, lütfen bekleyin...</div>
+  
+  <div id="mainForm" style="display: none;">
+    
+    <div style="margin-bottom: 20px;">
+      <label>Hedef Hisse Seçimi (Sadece Tekli Analiz İçin):</label>
+      <select id="hisseSelect"></select>
+    </div>
+    
+    <div class="filter-panel">
+      <div class="date-row">
+        
+        <div class="date-col">
+          <label>Başlangıç Tarihi:</label>
+          <div class="split-selects">
+            <select id="basAy" onchange="ayDegisti('bas')"></select>
+            <select id="basGun"></select>
+          </div>
+        </div>
+        
+        <div class="date-col">
+          <label>Bitiş Tarihi:</label>
+          <div class="split-selects">
+            <select id="bitAy" onchange="ayDegisti('bit')"></select>
+            <select id="bitGun"></select>
+          </div>
+        </div>
+
+      </div>
+      
+      <div class="quick-actions">
+        <button class="btn-quick" onclick="hizliTarihSecVeTara(1)">Dünden Bugüne</button>
+        <button class="btn-quick" onclick="hizliTarihSecVeTara(5)">Son 1 Hafta</button>
+        <button class="btn-quick" onclick="hizliTarihSecVeTara(15)">Son 15 Gün</button>
+        <button class="btn-quick" onclick="hizliTarihSecVeTara(22)">Son 1 Ay</button>
+        <button class="btn-quick" onclick="hizliTarihSecVeTara(65)">Son 3 Ay</button>
+        <button class="btn-quick" onclick="hizliTarihSecVeTara(999)">Tüm Zamanlar</button>
+      </div>
+    </div>
+    
+    <button id="topluBtn" class="main-btn btn-green" onclick="topluTetikle()">🌍 Tüm Piyasayı Tara (Seçili Tarihlere Göre)</button>
+    <button id="sorgulaBtn" class="main-btn btn-blue" onclick="analizTetikle()">🔍 Sadece Seçili Hisseyi Hesapla</button>
+  </div>
+  
+  <div id="loadingSorgu" class="loading">Hesaplanıyor, lütfen bekleyin...</div>
+  <div id="errorBox" class="error-msg"></div>
+  
+  <div id="resultCard" class="result-card">
+    <div id="resHisseAdi" class="result-header">-</div>
+    <div class="result-body">
+      <div class="result-row"><span class="metric-name">Başlangıç Fiyatı</span><span id="resBasFiyat" class="metric-value">-</span></div>
+      <div class="result-row"><span class="metric-name">Bitiş Fiyatı</span><span id="resBitFiyat" class="metric-value">-</span></div>
+      <div class="result-row"><span class="metric-name">Başlangıç Yabancı Oranı</span><span id="resBasOran" class="metric-value">-</span></div>
+      <div class="result-row"><span class="metric-name">Bitiş Yabancı Oranı</span><span id="resBitOran" class="metric-value">-</span></div>
+      <div class="result-row"><span class="metric-name">Mutlak Pay Değişimi</span><span id="resMutlakDegisim" class="metric-value">-</span></div>
+      <div id="finalBadge" class="final-badge">-</div>
+    </div>
+  </div>
+
+  <div id="tableContainer" class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Hisse</th>
+          <th class="sortable" onclick="tabloyuSirala('baslangic')">Başlangıç (%) <span id="icon-baslangic" class="sort-icon">↕</span></th>
+          <th class="sortable" onclick="tabloyuSirala('bitis')">Bitiş (%) <span id="icon-bitis" class="sort-icon">↕</span></th>
+          <th class="sortable" onclick="tabloyuSirala('fark')">Net Değişim <span id="icon-fark" class="sort-icon sort-active">⬇</span></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  // YENİ: Google Apps Script Web App URL'niz
+  const API_URL = "https://script.google.com/macros/s/AKfycbzJBnIluliiPToCQH-2P_ZctePdr5y3EVVqzjNRjjivTZ3FagMMDheCDOTn_dKGmS_O1A/exec";
+
+  var globalTarihler = []; 
+  var aylarVerisi = {}; 
+  var aySirasi = []; 
+  
+  var sonSorguVerisi = []; 
+  var aktifSiralama = { kolon: 'fark', yon: 'desc' }; 
+  
+  var aylarIsim = {
+    "01":"Ocak", "02":"Şubat", "03":"Mart", "04":"Nisan", 
+    "05":"Mayıs", "06":"Haziran", "07":"Temmuz", "08":"Ağustos", 
+    "09":"Eylül", "10":"Ekim", "11":"Kasım", "12":"Aralık"
+  };
+
+  window.onload = function() {
+    // google.script.run YERİNE FETCH KULLANIMI
+    fetch(API_URL + "?islem=getFiltreElemanlari")
+      .then(response => response.json())
+      .then(res => {
+        if (res.durum !== "basarili") throw new Error(res.mesaj);
+        
+        var data = res.veri;
+        if(data.hisseler.length === 0) { hataGoster("Tabloda henüz veri yok."); return; }
+        
+        globalTarihler = data.tarihler; 
+        
+        var hisseSelect = document.getElementById('hisseSelect');
+        data.hisseler.forEach(function(h) { hisseSelect.add(new Option(h, h)); });
+        
+        globalTarihler.forEach(function(t) {
+            var parca = t.split('.');
+            var ayYil = parca[1] + "." + parca[2]; 
+            
+            if(!aylarVerisi[ayYil]) {
+                aylarVerisi[ayYil] = [];
+                aySirasi.push(ayYil);
+            }
+            aylarVerisi[ayYil].push(t);
+        });
+        
+        aySirasi.reverse();
+        for(var k in aylarVerisi) {
+            aylarVerisi[k].reverse();
+        }
+        
+        var basAy = document.getElementById('basAy');
+        var bitAy = document.getElementById('bitAy');
+        
+        aySirasi.forEach(function(ayKodu) {
+            var parca = ayKodu.split('.');
+            var gorunenIsim = aylarIsim[parca[0]] + " " + parca[1]; 
+            basAy.add(new Option(gorunenIsim, ayKodu));
+            bitAy.add(new Option(gorunenIsim, ayKodu));
+        });
+        
+        ayDegisti('bas');
+        ayDegisti('bit');
+        
+        arayuzTarihSec(1);
+
+        document.getElementById('loadingInit').style.display = 'none';
+        document.getElementById('mainForm').style.display = 'block';
+      })
+      .catch(error => {
+        document.getElementById('loadingInit').style.display = 'none';
+        hataGoster("Veriler yüklenirken hata oluştu: " + error.message);
+      });
+  };
+
+  function ayDegisti(tip) {
+    var secilenAy = document.getElementById(tip + 'Ay').value;
+    var gunSelect = document.getElementById(tip + 'Gun');
+    
+    gunSelect.innerHTML = ''; 
+    
+    var oAyinGunleri = aylarVerisi[secilenAy] || [];
+    oAyinGunleri.forEach(function(t) {
+        var sadeceGun = t.split('.')[0]; 
+        gunSelect.add(new Option(sadeceGun + " " + aylarIsim[t.split('.')[1]], t));
+    });
+  }
+
+  function kutulariAyarla(tip, hedefTarihStr) {
+    var parca = hedefTarihStr.split('.');
+    var ayYil = parca[1] + "." + parca[2];
+    
+    document.getElementById(tip + 'Ay').value = ayYil;
+    ayDegisti(tip); 
+    document.getElementById(tip + 'Gun').value = hedefTarihStr; 
+  }
+
+  function arayuzTarihSec(gunSayisi) {
+    if(globalTarihler.length === 0) return;
+    
+    var enGuncelIndex = globalTarihler.length - 1;
+    var hedefBaslangicIndex = 0;
+    
+    if (gunSayisi !== 999) {
+        hedefBaslangicIndex = Math.max(0, enGuncelIndex - gunSayisi);
+    }
+    
+    kutulariAyarla('bas', globalTarihler[hedefBaslangicIndex]);
+    kutulariAyarla('bit', globalTarihler[enGuncelIndex]);
+  }
+
+  function hizliTarihSecVeTara(gunSayisi) {
+    arayuzTarihSec(gunSayisi);
+  }
+
+  function tarihSirasiniDuzenleVeGetir() {
+    var basTarih = document.getElementById('basGun').value;
+    var bitTarih = document.getElementById('bitGun').value;
+    
+    var valBas = parseInt(basTarih.split('.').reverse().join(''));
+    var valBit = parseInt(bitTarih.split('.').reverse().join(''));
+    
+    if (valBas > valBit) {
+      kutulariAyarla('bas', bitTarih);
+      kutulariAyarla('bit', basTarih);
+      return { basTarih: bitTarih, bitTarih: basTarih };
+    }
+    
+    return { basTarih: basTarih, bitTarih: bitTarih };
+  }
+
+  function analizTetikle() {
+    document.getElementById('errorBox').style.display = 'none';
+    document.getElementById('tableContainer').style.display = 'none'; 
+    document.getElementById('resultCard').style.display = 'none';
+    document.getElementById('loadingSorgu').style.display = 'block';
+    
+    var tarihler = tarihSirasiniDuzenleVeGetir();
+    var hisse = document.getElementById('hisseSelect').value;
+    
+    var url = API_URL + "?islem=hisseAnaliziYap&hisse=" + encodeURIComponent(hisse) + 
+              "&baslangic=" + encodeURIComponent(tarihler.basTarih) + 
+              "&bitis=" + encodeURIComponent(tarihler.bitTarih);
+
+    fetch(url)
+      .then(response => response.json())
+      .then(res => {
+        document.getElementById('loadingSorgu').style.display = 'none';
+        if (res.durum !== "basarili") throw new Error(res.mesaj);
+        
+        var data = res.veri;
+        if (!data || (data.baslangicOran === null && data.bitisOran === null)) { hataGoster("Seçilen tarihlerde kayıt bulunamadı."); return; }
+        
+        document.getElementById('resHisseAdi').textContent = hisse + " (" + tarihler.basTarih + " - " + tarihler.bitTarih + ")";
+        document.getElementById('resBasFiyat').textContent = data.baslangicFiyat ? data.baslangicFiyat.toFixed(2) + " TL" : "Yok";
+        document.getElementById('resBitFiyat').textContent = data.bitisFiyat ? data.bitisFiyat.toFixed(2) + " TL" : "Yok";
+        
+        document.getElementById('resBasOran').textContent = "%" + (data.baslangicOran ? (data.baslangicOran * 100).toFixed(2) : "0.00");
+        document.getElementById('resBitOran').textContent = "%" + (data.bitisOran ? (data.bitisOran * 100).toFixed(2) : "0.00");
+        
+        var netFark = ((data.bitisOran || 0) - (data.baslangicOran || 0)) * 100;
+        document.getElementById('resMutlakDegisim').textContent = (netFark >= 0 ? "+" : "") + netFark.toFixed(2) + " Puan";
+        
+        var badge = document.getElementById('finalBadge');
+        badge.className = "final-badge " + (netFark > 0 ? 'badge-success' : (netFark < 0 ? 'badge-danger' : 'badge-neutral'));
+        badge.textContent = netFark > 0 ? "YABANCI GİRİŞİ: +" + netFark.toFixed(2) + "%" : (netFark < 0 ? "YABANCI ÇIKIŞI: " + netFark.toFixed(2) + "%" : "DEĞİŞİM YOK");
+        
+        document.getElementById('resultCard').style.display = 'block';
+      })
+      .catch(error => {
+        document.getElementById('loadingSorgu').style.display = 'none';
+        hataGoster("Hata: " + error.message);
+      });
+  }
+
+  function topluTetikle() {
+    document.getElementById('errorBox').style.display = 'none';
+    document.getElementById('resultCard').style.display = 'none'; 
+    document.getElementById('tableContainer').style.display = 'none';
+    document.getElementById('loadingSorgu').style.display = 'block';
+    
+    var tarihler = tarihSirasiniDuzenleVeGetir();
+    
+    var url = API_URL + "?islem=topluAnalizYap" + 
+              "&baslangic=" + encodeURIComponent(tarihler.basTarih) + 
+              "&bitis=" + encodeURIComponent(tarihler.bitTarih);
+
+    fetch(url)
+      .then(response => response.json())
+      .then(res => {
+        document.getElementById('loadingSorgu').style.display = 'none';
+        if (res.durum !== "basarili") throw new Error(res.mesaj);
+        
+        var liste = res.veri;
+        if (!liste || liste.length === 0) { hataGoster("Seçilen tarihlerde piyasa verisi bulunamadı."); return; }
+        
+        sonSorguVerisi = liste;
+        aktifSiralama = { kolon: 'fark', yon: 'desc' };
+        ikonlariGuncelle();
+        tabloyuEkranaBas();
+        
+        document.getElementById('tableContainer').style.display = 'block';
+      })
+      .catch(error => {
+        document.getElementById('loadingSorgu').style.display = 'none';
+        hataGoster("Hata: " + error.message);
+      });
+  }
+  
+  function tabloyuEkranaBas() {
+    var tbody = document.getElementById('tableBody');
+    tbody.innerHTML = ''; 
+    
+    sonSorguVerisi.forEach(function(item) {
+      var fark = item.fark * 100;
+      var bas = item.baslangic * 100;
+      var bit = item.bitis * 100;
+      
+      var rowClass = fark > 0 ? 'text-green' : (fark < 0 ? 'text-red' : '');
+      var isaret = fark > 0 ? '+' : '';
+      
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td><strong>' + item.kod + '</strong></td>' +
+                     '<td>%' + bas.toFixed(2) + '</td>' +
+                     '<td>%' + bit.toFixed(2) + '</td>' +
+                     '<td class="' + rowClass + '">' + isaret + fark.toFixed(2) + '</td>';
+      tbody.appendChild(tr);
+    });
+  }
+  
+  function tabloyuSirala(kolonAdi) {
+      if(sonSorguVerisi.length === 0) return; 
+      
+      if (aktifSiralama.kolon === kolonAdi) {
+          aktifSiralama.yon = aktifSiralama.yon === 'desc' ? 'asc' : 'desc';
+      } else {
+          aktifSiralama.kolon = kolonAdi;
+          aktifSiralama.yon = 'desc'; 
+      }
+      
+      ikonlariGuncelle();
+      
+      sonSorguVerisi.sort(function(a, b) {
+          var degerA = a[kolonAdi];
+          var degerB = b[kolonAdi];
+          
+          if (aktifSiralama.yon === 'desc') {
+              return degerB - degerA; 
+          } else {
+              return degerA - degerB; 
+          }
+      });
+      
+      tabloyuEkranaBas();
+  }
+  
+  function ikonlariGuncelle() {
+      ['baslangic', 'bitis', 'fark'].forEach(function(k) {
+          document.getElementById('icon-' + k).innerText = '↕';
+          document.getElementById('icon-' + k).classList.remove('sort-active');
+      });
+      
+      var okIsareti = aktifSiralama.yon === 'desc' ? '⬇' : '⬆';
+      var aktifIkon = document.getElementById('icon-' + aktifSiralama.kolon);
+      aktifIkon.innerText = okIsareti;
+      aktifIkon.classList.add('sort-active');
+  }
+  
+  function hataGoster(mesaj) {
+    var err = document.getElementById('errorBox');
+    err.textContent = mesaj;
+    err.style.display = 'block';
+  }
+</script>
+</body>
+</html>
