@@ -46,10 +46,13 @@
     .badge-danger { background-color: #fee2e2; color: #b91c1c; }
     .badge-neutral { background-color: #f1f5f9; color: #475569; }
 
-    .table-container { display: none; margin-top: 25px; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
-    .data-table { width: 100%; border-collapse: collapse; font-size: 16px; }
+    /* YENİ: Mobilde sağa-sola kayabilmesi için overflow-x: auto yapıldı */
+    .table-container { display: none; margin-top: 25px; border: 1px solid #e2e8f0; border-radius: 10px; overflow-x: auto; }
+    /* YENİ: min-width: 350px eklendi ki ekran çok daralırsa sıkışmasın, scroll çıksın */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 16px; min-width: 350px; }
     .data-table th, .data-table td { padding: 15px 12px; text-align: center; border-bottom: 1px solid #e2e8f0; }
-    .data-table th { background-color: #f8fafc; color: #1e3a8a; border-bottom: 2px solid #cbd5e1; font-size: 15px; text-align: center; }
+    /* YENİ: white-space: nowrap eklendi (başlıkların ve okların alta inmemesi için) */
+    .data-table th { background-color: #f8fafc; color: #1e3a8a; border-bottom: 2px solid #cbd5e1; font-size: 15px; text-align: center; white-space: nowrap; }
     .data-table tr:hover { background-color: #f1f5f9; }
     .text-green { color: #15803d; font-weight: bold; }
     .text-red { color: #b91c1c; font-weight: bold; }
@@ -63,6 +66,12 @@
       .date-row { flex-direction: column; gap: 15px; }
       .quick-actions { flex-wrap: wrap; gap: 8px; }
       .btn-quick { min-width: 31%; height: auto; padding: 12px 2px; }
+      
+      /* YENİ: Mobil cihazlarda tablonun iç boşluklarını ve boyutlarını daraltıyoruz */
+      .data-table { font-size: 14px; }
+      .data-table th, .data-table td { padding: 10px 5px; }
+      .data-table th { font-size: 13px; }
+      .sort-icon { margin-left: 2px; width: 12px; }
     }
   </style>
 </head>
