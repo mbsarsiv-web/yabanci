@@ -46,12 +46,9 @@
     .badge-danger { background-color: #fee2e2; color: #b91c1c; }
     .badge-neutral { background-color: #f1f5f9; color: #475569; }
 
-    /* YENİ: Mobilde sağa-sola kayabilmesi için overflow-x: auto yapıldı */
     .table-container { display: none; margin-top: 25px; border: 1px solid #e2e8f0; border-radius: 10px; overflow-x: auto; }
-    /* YENİ: min-width: 350px eklendi ki ekran çok daralırsa sıkışmasın, scroll çıksın */
     .data-table { width: 100%; border-collapse: collapse; font-size: 16px; min-width: 350px; }
     .data-table th, .data-table td { padding: 15px 12px; text-align: center; border-bottom: 1px solid #e2e8f0; }
-    /* YENİ: white-space: nowrap eklendi (başlıkların ve okların alta inmemesi için) */
     .data-table th { background-color: #f8fafc; color: #1e3a8a; border-bottom: 2px solid #cbd5e1; font-size: 15px; text-align: center; white-space: nowrap; }
     .data-table tr:hover { background-color: #f1f5f9; }
     .text-green { color: #15803d; font-weight: bold; }
@@ -67,7 +64,6 @@
       .quick-actions { flex-wrap: wrap; gap: 8px; }
       .btn-quick { min-width: 31%; height: auto; padding: 12px 2px; }
       
-      /* YENİ: Mobil cihazlarda tablonun iç boşluklarını ve boyutlarını daraltıyoruz */
       .data-table { font-size: 14px; }
       .data-table th, .data-table td { padding: 10px 5px; }
       .data-table th { font-size: 13px; }
@@ -120,6 +116,11 @@
       </div>
     </div>
     
+    <!-- HİSSE SAYACI BURAYA EKLENDİ -->
+    <div id="hisseSayaci" style="text-align: center; color: #475569; font-size: 14px; margin-bottom: 12px; font-weight: 600;">
+      Sistemde işlenen hisse sayısı yükleniyor...
+    </div>
+    
     <button id="topluBtn" class="main-btn btn-green" onclick="topluTetikle()">🌍 Tüm Piyasayı Tara (Seçili Tarihlere Göre)</button>
     <button id="sorgulaBtn" class="main-btn btn-blue" onclick="analizTetikle()">🔍 Sadece Seçili Hisseyi Hesapla</button>
   </div>
@@ -155,7 +156,7 @@
 </div>
 
 <script>
-  // YENİ: Google Apps Script Web App URL'niz
+  // Kendi API URL'nizi buraya tekrar yapıştırın
   const API_URL = "https://script.google.com/macros/s/AKfycbzJBnIluliiPToCQH-2P_ZctePdr5y3EVVqzjNRjjivTZ3FagMMDheCDOTn_dKGmS_O1A/exec";
 
   var globalTarihler = []; 
@@ -172,7 +173,6 @@
   };
 
   window.onload = function() {
-    // google.script.run YERİNE FETCH KULLANIMI
     fetch(API_URL + "?islem=getFiltreElemanlari")
       .then(response => response.json())
       .then(res => {
@@ -185,6 +185,9 @@
         
         var hisseSelect = document.getElementById('hisseSelect');
         data.hisseler.forEach(function(h) { hisseSelect.add(new Option(h, h)); });
+        
+        // HİSSE SAYACININ EKRANA YAZDIRILMASI
+        document.getElementById('hisseSayaci').textContent = "Sistemde anlık " + data.hisseler.length + " adet hisse verisi işlenmektedir.";
         
         globalTarihler.forEach(function(t) {
             var parca = t.split('.');
